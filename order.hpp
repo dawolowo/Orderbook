@@ -55,15 +55,15 @@ public:
     Quantity &quantity() {
         return _quantity;
     }
-    
+
    //Sets the order's quantity and initial quantity which effectively cancels it
     void cancel(){
         _initial_quantity =_quantity = 0;
     }
 
-    /*Fills the order*/
-    void fill(Quantity &quantity){
-        // This will be utilized in the mathcing algorithm
+    /*Fills the order. Returns the volume filled*/
+    Quantity fill(Quantity &quantity){
+        Quantity volume = std::min(quantity, this->_quantity);
         if (quantity > this->_quantity){
             quantity -= this->_quantity;
             this->_quantity = 0;
@@ -72,6 +72,7 @@ public:
             this->_quantity -= quantity;
             quantity = 0;
         }
+        return volume;
     }
 
     friend int operator<=>(const Order& other1, const Order &other2){
@@ -80,6 +81,5 @@ public:
         return 0;
     }
 };
-
 
 #endif
