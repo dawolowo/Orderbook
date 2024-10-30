@@ -3,7 +3,7 @@
 #include <iostream>
 
 typedef double Price;
-typedef unsigned long long Quantity;
+typedef double Quantity;
 typedef unsigned long long OrderId;
 
 #endif
