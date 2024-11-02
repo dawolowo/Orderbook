@@ -15,5 +15,5 @@ File details:
 * `orderbook.hpp`: This file contains `OrderBook` class, the heart of this project. The `OrderBook` class contains the matching algorithm and some methods like last_price, spread, best_bid etc.
   This file also contains `OrderbookInfo` struct which is what is used to take a snapshot of the orderbook at an instance.
 * `orderlevel.hpp`: It contains `OrderLevel` class, a queue like object that contains all orders at a level and the quantity of orders at that level.
-* `time_sale.hpp`: It contains a `TimeSale` struct that stores the time and sales (i.e details every transaction that occurs)
+* `time_sale.hpp`: It contains a `TimeSale` struct that stores the time and sales (i.e details of every transaction that occurs)
 
