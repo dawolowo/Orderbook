@@ -44,8 +44,7 @@ public:
 */
 class OrderBook{
     
-private:
-    
+private:    
     std::map<Price, OrderLevel, std::greater<Price>> _bids; // Keys in descending order
     std::map<Price, OrderLevel, std::less<Price>> _asks; // Keys in ascending order
     std::unordered_map<OrderId, Order *> _limit_orders;
@@ -78,6 +77,8 @@ private:
             }
         }
     }
+    
+    //Processes the stops when it's triggered
     void _stops_trigger(auto &stop_pool){
         OrderLevel &level = stop_pool.begin()->second;
         while (!level.empty()){
@@ -86,6 +87,7 @@ private:
             level.pop();
         }
     }
+
     // helper function for match()
     void _match_helper(Order &mo, auto &market){
         Price best_price = market.begin()->first;
@@ -104,11 +106,13 @@ private:
             if (mo.quantity() == 0) _market_orders.pop();
         }
     }
+
     //Fills order. Only works on one level does not go to another level
     void _fill(Order &mo){
         if (mo.direction() == OrderDirection::buy) _fill_helper(mo, _asks);
         else _fill_helper(mo, _bids);
     }
+
     // Helper to _fill()
     void _fill_helper(Order &mo, auto &market){
         OrderLevel &level = market.begin()->second;
@@ -125,6 +129,7 @@ private:
         }
         if (level.empty()) market.erase(market.begin());
     }
+
     //Checks if an order is proper
     bool _proper_order(Order &order){
         if (order.order_type() == OrderType::limit && order.direction() == OrderDirection::buy && order.price() > _last_price) return false;
@@ -134,6 +139,7 @@ private:
         return true;
     }
 
+    //Helper to cancel()
     void _cancel_helper(OrderId id, auto &pool){
         Order &order = *(pool[id]);
         Price price = order.price();
@@ -161,26 +167,33 @@ public:
     OrderBook(Price initial_price){
         _last_price = initial_price;
     }
+
     //Returns the last traded price
     Price last_price() const {return _last_price;}
+
     //Returns the best bid
     Price best_bid(){
         if (_bids.empty()) return 0;
         return _bids.begin()->first;
     }
+
     //Returns the best ask
     Price best_ask(){
         if (_asks.empty()) return 0;
         return _asks.begin()->first;
     }
+
     //Returns the spread of the market
     Price spread(){return best_ask() - best_bid();}
+
     //Matches orders in the orderbook
     void match(){_match();}
+
     /*Adds and order to the orderbook
     @param order Order to be added
     */
     void add_order(Order &&order) {add_order(order);}
+
     /*Adds and order to the orderbook
     @param order Order to be added
     */
@@ -208,6 +221,7 @@ public:
             _market_orders.push(order);
         }
     }
+
     /*Cancels an order
     @param id Order id of the order being cancelled
     */
@@ -225,15 +239,25 @@ public:
     @param id order id of the order being modified
     @param new_order new order
     */
-    void modify_order(OrderId id, Order new_order){
+    void modify_order(OrderId id, Order &&new_order){
+        modify_order(id, new_order);
+    }
+
+    /*Modifies an order
+    @param id order id of the order being modified
+    @param new_order new order
+    */
+    void modify_order(OrderId id, Order &new_order){
         cancel_order(id);
         add_order(new_order);
     }
+    
     //Return true if no order is present in the orderbook
     bool empty() const{
         return _bids.empty() && _asks.empty();
     }
-    //Returns the time and sales data
+    
+    //Returns const refernce of the time and sales data
     const std::vector<TimeSale> &time_sales(){return _time_and_sales;}
 
     //Returns the bids aggregate of all price levels
@@ -245,6 +269,7 @@ public:
         }
         return info;
     }
+
     //Returns the asks aggregate of all price levels
     LevelsInfo get_asks() const{
         LevelsInfo info;
@@ -253,6 +278,7 @@ public:
         }
         return info;
     }
+
     /*Returns a snapshot of the orderbook */
     OrderbookInfo orderbook_info() const{
         return OrderbookInfo(get_bids(), get_asks());
