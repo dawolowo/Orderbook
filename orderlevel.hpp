@@ -17,6 +17,7 @@ public:
     OrderLevel(){
 
     }
+
     /*Adds an order
     @param order Order to be added to the level
     */
@@ -25,20 +26,28 @@ public:
         quantity += order.quantity();
         _data.push(order);
     }
-
+    
+    /*Adds an order
+    @param order Order to be added to the level
+    */
     void push(Order && order){ push(order); }
+
     /*Returns a read/write reference to the data at the first element of the level.*/
     Order &front() {return _data.front();}
+
     /*Removes first element
     @note No data is returned, and if the first element's data is needed, it should be retrieved before pop() is called.*/
     void pop(){
         quantity -= _data.front().quantity();
         _data.pop();
     }
+
     /*Returns true if no order is present at this level*/
     bool empty(){return _data.empty();}
+
     // Returns the number of order at the price level
     size_t size(){return _data.size();}
+
     /*Returns a read/write reference to the data at the last element of the level.*/
     Order &back(){return _data.back();}
 
