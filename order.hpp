@@ -37,23 +37,35 @@ public:
         this->_direction = side;
         this->_order_id = get_order_id();
     }
+
     OrderType order_type()const {
         return _order_type;
     }
+
     OrderId order_id() const {
         return _order_id;
     }
+
     OrderDirection direction() const{
         return _direction;
     }
+
     Price price() const {
         return _price;
     }
+
     Quantity initial_quantity() const{
         return _initial_quantity;
     }
+
     Quantity &quantity() {
         return _quantity;
+    }
+
+    //Sets the decimal place of the price. This is useful for maintaining consistency in orderbook
+    void set_dp(int n){
+        _price = (int) (_price * pow(10, n));
+        _price /= pow(10, n);
     }
 
    //Sets the order's quantity and initial quantity which effectively cancels it
@@ -81,5 +93,6 @@ public:
         return 0;
     }
 };
+
 
 #endif
