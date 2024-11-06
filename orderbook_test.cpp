@@ -23,9 +23,8 @@ int main(){
     btc_OB.add_order(stop);
     btc_OB.cancel_order(stop.order_id());
     btc_OB.match();
-
-    cout << btc_OB << "\n";
-    cout << btc_OB.last_price() << "\n";
+    btc_OB.print();
+    cout << "\n" << btc_OB.last_price() << "\n";
     for (const auto & x : btc_OB.time_sales()){
         cout << x << "\n";
     }   
