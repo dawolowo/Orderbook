@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <queue>
 #include <cmath>
-#include <windows.h>
 #include <iomanip>
 #include "alias.hpp"
 #include "orderlevel.hpp"
@@ -275,7 +274,6 @@ public:
     //Prints the orderbook
     void print(){
         std::ostream &out = std::cout;
-        SetConsoleOutputCP(CP_UTF8);
         if (empty()) out << "Empty OrderBook";
         else {
             int bars = (_bids.size() + _asks.size()) * 8; // To dynamically determine the number of bars
@@ -291,16 +289,17 @@ public:
             out << "\033[33m"; // set color to yellow
             out << "\nPRICE => " << _last_price << "\n\n";
             out << "\033[92m"; // set color to green
-            // out << "\nBIDS:";
+
             for (auto level = _bids.begin(); level != _bids.end(); level++){
                 out << "\t" << level->first << "\t" << level->second.quantity << "\t";
                 for (int i = 0; i <= level->second.quantity * bars / vol; i++)
                     out << "⬜";
                 out << "\n";
             }
-            out << "\033[0m" ;
+            out << "\033[0m" ; // reset
         }
     }
+    
     //Returns const refernce of the time and sales data
     const std::vector<TimeSale> &time_sales(){return _time_and_sales;}
 
