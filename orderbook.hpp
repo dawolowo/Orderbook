@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <queue>
 #include <cmath>
+#include <windows.h>
+#include <iomanip>
 #include "alias.hpp"
 #include "orderlevel.hpp"
 #include "order.hpp"
@@ -41,6 +43,7 @@ public:
 
 /*An object that matches/ processes various orders.
 @param initial_price Starting price of the asset.
+@param dp number of decimal place
 */
 class OrderBook{
     
@@ -52,8 +55,10 @@ private:
     std::map<Price, OrderLevel, std::greater<>> _sell_stops; // Descending order
     std::unordered_map<OrderId, Order *> _stop_orders;
     Price _last_price;
+    int _decimal_place;
     std::vector<TimeSale> _time_and_sales;
     std::queue<Order> _market_orders;
+    Quantity _bid_vol = 0, _ask_vol = 0;
 
     /*Matching algorithm. Uses FIFO algorithm*/
     void _match(){
@@ -117,14 +122,18 @@ private:
     void _fill_helper(Order &mo, auto &market){
         OrderLevel &level = market.begin()->second;
         while (!level.empty() && mo.quantity() > 0){
-            Quantity volume, initial = mo.quantity();
-            volume = level.front().fill(mo.quantity());
-            level.quantity -= volume;
+            Quantity filled_volume, initial = mo.quantity();
+            filled_volume = level.front().fill(mo.quantity());
+            level.quantity -= filled_volume;
             _last_price = level.front().price();
-            if (mo.direction() == OrderDirection::buy)
-                _time_and_sales.push_back(TimeSale(time(0), _last_price, volume, false));
-            else
-                 _time_and_sales.push_back(TimeSale(time(0), _last_price, volume, true));
+            if (mo.direction() == OrderDirection::buy){
+                _time_and_sales.push_back(TimeSale(time(0), _last_price, filled_volume, false));
+                _ask_vol -= filled_volume;
+            }
+            else{
+                _time_and_sales.push_back(TimeSale(time(0), _last_price, filled_volume, true));
+                _bid_vol -= filled_volume;
+            }                 
             if (level.front().quantity() == 0) level.pop();
         }
         if (level.empty()) market.erase(market.begin());
@@ -145,10 +154,12 @@ private:
         Price price = order.price();
         if (order.order_type() == OrderType::limit && order.direction() == OrderDirection::buy){
             _bids[price].quantity -= order.initial_quantity();
+            _bid_vol -= order.initial_quantity();
             if (_bids[price].quantity == 0) _bids.erase(price);
         }   
         else if (order.order_type() == OrderType::limit && order.direction() == OrderDirection::sell){
             _asks[price].quantity -= order.initial_quantity();
+            _ask_vol -= order.initial_quantity();
             if (_asks[price].quantity == 0) _asks.erase(price);
         }
         else if (OrderType::stop == order.order_type() && OrderDirection::buy == order.direction()){
@@ -164,8 +175,9 @@ private:
     }
 public:
 
-    OrderBook(Price initial_price){
+    OrderBook(Price initial_price, int dp){
         _last_price = initial_price;
+        _decimal_place = dp;
     }
 
     //Returns the last traded price
@@ -199,15 +211,18 @@ public:
     */
     void add_order(Order &order){
         if (!_proper_order(order)) throw std::logic_error("Cause: add_order()\tCheck the order to ensure it is proper");
+        order.set_dp(_decimal_place);
         Price price = order.price();
         OrderId id = order.order_id();
         if (order.order_type() == OrderType::limit && order.direction() == OrderDirection::buy){
             _bids[price].push(order);
             _limit_orders[id] = &_bids[price].back();
+            _bid_vol += order.initial_quantity();
         }
         else if (order.order_type() == OrderType::limit && order.direction() == OrderDirection::sell){
             _asks[price].push(order);
             _limit_orders[id] = &_asks[price].back();
+            _ask_vol += order.initial_quantity();
         }
         else if (order.order_type() == OrderType::stop && order.direction() == OrderDirection::buy){
             _buy_stops[price].push(order);
@@ -228,6 +243,7 @@ public:
     void cancel_order(OrderId id){
         if (_limit_orders.find(id) != _limit_orders.end()){
             _cancel_helper(id, _limit_orders);
+            
         }
         else if (_stop_orders.find(id) != _stop_orders.end()){
             _cancel_helper(id, _stop_orders);
@@ -256,7 +272,35 @@ public:
     bool empty() const{
         return _bids.empty() && _asks.empty();
     }
-    
+    //Prints the orderbook
+    void print(){
+        std::ostream &out = std::cout;
+        SetConsoleOutputCP(CP_UTF8);
+        if (empty()) out << "Empty OrderBook";
+        else {
+            int bars = (_bids.size() + _asks.size()) * 8; // To dynamically determine the number of bars
+            Quantity vol = _bid_vol+_ask_vol;
+            out << std::setprecision(_decimal_place) << std::fixed;
+            out << "\033[91m"; // set color to red
+            for (auto level = _asks.rbegin(); level != _asks.rend(); level++){
+                out << "\t" << level->first << "\t" << level->second.quantity << "\t";
+                for (int i = 0; i <= level->second.quantity * bars / vol; i++)
+                    out << "⬜";
+                out << "\n";
+            }
+            out << "\033[33m"; // set color to yellow
+            out << "\nPRICE => " << _last_price << "\n\n";
+            out << "\033[92m"; // set color to green
+            // out << "\nBIDS:";
+            for (auto level = _bids.begin(); level != _bids.end(); level++){
+                out << "\t" << level->first << "\t" << level->second.quantity << "\t";
+                for (int i = 0; i <= level->second.quantity * bars / vol; i++)
+                    out << "⬜";
+                out << "\n";
+            }
+            out << "\033[0m" ;
+        }
+    }
     //Returns const refernce of the time and sales data
     const std::vector<TimeSale> &time_sales(){return _time_and_sales;}
 
@@ -283,25 +327,8 @@ public:
     OrderbookInfo orderbook_info() const{
         return OrderbookInfo(get_bids(), get_asks());
     }
-
-    friend std::ostream &operator<<(std::ostream &out, const OrderBook &ob);
       
 };
 
-std::ostream &operator<<(std::ostream &out, const OrderBook &ob){
-    if (ob.empty()) out << "Empty OrderBook";
-    else {
-        out << "\tPRICE\tQUANTITY\n\nASKS:";
-        for (auto level = ob._asks.rbegin(); level != ob._asks.rend(); level++){
-            out << "\t" << level->first << "\t" << level->second.quantity << "\n";
-        }
-        out << "\nPRICE => " << ob._last_price << "\n";
-        out << "\nBIDS:";
-        for (auto level = ob._bids.begin(); level != ob._bids.end(); level++){
-            out << "\t" << level->first << "\t" << level->second.quantity << "\n";
-        }
-    }
-    return out;
-}
 
 #endif
