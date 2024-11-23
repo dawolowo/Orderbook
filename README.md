@@ -5,7 +5,7 @@ ioc = immediate or cancel,
 fok = fill or kill, 
 mo = market order, 
 ## Design
-It is an header-only project, the only .cpp file is the test.
+It is an header-only project.
 
 File details in `header`:
 * `alias.hpp`: This is where all alias to a type is.
