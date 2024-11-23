@@ -7,7 +7,7 @@ mo = market order,
 ## Design
 It is an header-only project, the only .cpp file is the test.
 
-File details:
+File details in `header`:
 * `alias.hpp`: This is where all alias to a type is.
 * `enums.hpp`: This is where all enumeration (`OrderDirection`, `OrderType`) is.
 * `levels_agg.hpp`: This file contains `LevelsAgg` struct which contains quantity of orders at a price level.
