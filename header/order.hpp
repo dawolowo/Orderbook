@@ -4,9 +4,9 @@
 #include "enums.hpp"
 #include <format>
 
-OrderId ID = 0;
 
 OrderId get_order_id(){
+    static OrderId ID = 0;
     return ID++;
 }
 
