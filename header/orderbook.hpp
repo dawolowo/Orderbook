@@ -17,7 +17,7 @@
 #include "time_sale.hpp"
 
 
-// Contains the orderbook information. It can be used to take a snapshot at an instance since the order book changes quickly in the real world
+// Contains the orderbook information. Used to take a snapshot at an instance since the order book changes quickly in the real world
 struct OrderbookInfo{
     
 private:
@@ -111,7 +111,7 @@ private:
         }
     }
 
-    //Fills order. Only works on one level does not go to another level
+    //Fills order. Fills only one level does not to another level
     void _fill(Order &mo){
         if (mo.direction() == OrderDirection::buy) _fill_helper(mo, _asks);
         else _fill_helper(mo, _bids);
